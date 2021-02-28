@@ -3,7 +3,7 @@
 import json
 import requests
 
-token = "AxflzoOJHIkEtHOKiBcNqUHYTtdgogApyPbCbSQv"
+token = ""
 base_url = "https://api.discogs.com/"
 user = "robruff"
 user_agent = "FooBarApp/3.0"
