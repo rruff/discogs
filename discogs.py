@@ -4,7 +4,7 @@ import json
 import requests
 import sys
 
-import models
+from models import Folder, SimpleObject
 
 class Client:
     _baseurl = "https://api.discogs.com/"
@@ -23,7 +23,7 @@ class Client:
 
         folders = []
         for folder in body['folders']:
-            folders.append(models.Folder(folder))
+            folders.append(Folder(folder))
         return folders
     
     def list_items_by_folder(self, user, folder):
@@ -37,7 +37,7 @@ class Client:
 
         releases = []
         for release in body['releases']:
-            releases.append(models.SimpleObject(release))
+            releases.append(SimpleObject(release))
         return releases
 
 
