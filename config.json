@@ -1,9 +1,0 @@
-{
-    "baseurl" : "https://api.discogs.com/",
-    "user" : "robruff",
-    "useragent" : "FooBarApp/3.0",
-    "paths" : {
-        "users" : "users",
-        "folders" : "collection/folders"
-    }
-}

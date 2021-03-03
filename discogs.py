@@ -2,33 +2,53 @@
 
 import json
 import requests
+import sys
 
-_config = None
+import models
 
-def load_config():
-    fp = open('config.json', 'r')
-    return json.load(fp)
+class Client:
+    _baseurl = "https://api.discogs.com/"
+    _useragent = "FooBarApp/3.0"
 
-def list_folders(user, usertoken=None):
-    url = _config.baseurl + _config.paths['users'] + "/" + user + "/" + _config.paths['folders']
-    if usertoken:
-        url += "?token=" + usertoken
-    
-    return requests.get(url)
+    def __init__(self, token=None):
+        self.token = token
 
-class Config:
-    def __init__(self, filename):
-        _conf = self._loadconfig(filename)
-        self.baseurl = _conf['baseurl']
-        self.user = _conf['user']
-        self.paths = _conf['paths']
-    
-    def _loadconfig(self, filename):
-        fp = open(filename, 'r')
-        return json.load(fp)
+    def list_folders(self, user):
+        url = "{}/users/{}/collection/folders".format(self._baseurl, user)
+        if self.token:
+            url += "?token=" + self.token
         
+        response = requests.get(url)
+        body = json.loads(response.text)
+
+        folders = []
+        for folder in body['folders']:
+            folders.append(models.Folder(folder))
+        return folders
+    
+    def list_items_by_folder(self, user, folder):
+        url = "{}/users/{}/collection/folders/{}/releases".format(self._baseurl, user, folder.id)
+        if self.token:
+            url += "?token=" + self.token
+        
+        response = requests.get(url)
+        # print(response.text)
+        body = json.loads(response.text)
+
+        releases = []
+        for release in body['releases']:
+            releases.append(models.SimpleObject(release))
+        return releases
+
+
+def main():
+    if len(sys.argv) == 3:
+        username = sys.argv[1]
+        token = sys.argv[2]
+        client = Client(token)
+        folders = client.list_folders(username)
+        for folder in folders:
+            print(vars(folder))
+
 if __name__ == "__main__":
-    _config = Config('config.json')
-    resp = list_folders(_config.user)
-    json_out = json.loads(resp.text)
-    print(json.dumps(json_out, indent=4))
+    main()
