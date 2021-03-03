@@ -49,6 +49,8 @@ def main():
         folders = client.list_folders(username)
         for folder in folders:
             print(vars(folder))
+    else:
+        print("Usage: {0} {1} {2}".format(sys.argv[0], '<username>', '<token>'))
 
 if __name__ == "__main__":
     main()
