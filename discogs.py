@@ -15,11 +15,8 @@ class Client:
 
     def list_folders(self, user):
         url = "{}/users/{}/collection/folders".format(self._baseurl, user)
-        if self.token:
-            url += "?token=" + self.token
         
-        response = requests.get(url)
-        body = json.loads(response.text)
+        body = self._request(url)
 
         folders = []
         for folder in body['folders']:
@@ -28,16 +25,24 @@ class Client:
     
     def list_releases_by_folder(self, user, folder):
         url = "{}/users/{}/collection/folders/{}/releases".format(self._baseurl, user, folder.id)
-        if self.token:
-            url += "?token=" + self.token
         
-        response = requests.get(url)
-        body = json.loads(response.text)
+        body = self._request(url)
 
         releases = []
         for release in body['releases']:
             releases.append(SimpleObject(release))
         return releases
+
+    def _request(self, url, params=None):
+        if self.token:
+            if not params: params = {}
+            params['token'] = self.token
+        
+        response = requests.get(url, params)
+        if response.status_code >= 200 and response.status_code < 300:
+            return json.loads(response.text)
+        else:
+            response.raise_for_status()
 
 
 def main():
