@@ -7,7 +7,7 @@ class Folder:
         self.resource_url = dict_['resource_url']
     
     def __str__(self):
-        return vars(self).__str__()
+        return str(vars(self))
 
 class SimpleObject:
     """ Generic object for quickly desereializing JSON """
@@ -15,4 +15,4 @@ class SimpleObject:
         self.__dict__.update(attrs)
 
     def __str__(self):
-        return vars(self).__str__()
+        return str(vars(self))
