@@ -26,13 +26,12 @@ class Client:
             folders.append(Folder(folder))
         return folders
     
-    def list_items_by_folder(self, user, folder):
+    def list_releases_by_folder(self, user, folder):
         url = "{}/users/{}/collection/folders/{}/releases".format(self._baseurl, user, folder.id)
         if self.token:
             url += "?token=" + self.token
         
         response = requests.get(url)
-        # print(response.text)
         body = json.loads(response.text)
 
         releases = []
@@ -48,7 +47,7 @@ def main():
         client = Client(token)
         folders = client.list_folders(username)
         for folder in folders:
-            print(vars(folder))
+            print(folder)
     else:
         print("Usage: {0} {1} {2}".format(sys.argv[0], '<username>', '<token>'))
 
