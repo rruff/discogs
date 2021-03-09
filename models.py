@@ -1,15 +1,5 @@
 from dataclasses import dataclass, field
-
-class SimpleObject:
-    """ Generic object for quickly desereializing JSON """
-    def __init__(self, dict_):
-        self.__dict__.update(dict_)
-
-    def __str__(self):
-        return str(vars(self))
-    
-    def __repr__(self):
-        return str(vars(self))
+from typing import Any
 
 class Artist:
     """ An artist who contributed to a release. """
@@ -28,6 +18,17 @@ class Artist:
         return [Release(r) for r in self.client._request(self.releases_url)]
 
 @dataclass
+class SimpleArtist:
+    """ A simplified artist object that is part of a release object. """
+    id: int
+    name: str
+    resource_url: str
+    anv: str = field(default = '')
+    join: str = field(default = '')
+    role: str = field(default = '')
+    tracks: str = field(default = '')
+
+@dataclass
 class Folder:
     """ A folder in a user's Discogs collection """
     id: int
@@ -41,7 +42,7 @@ class Folder:
 
     @property
     def releases(self):
-        return [CollectionRelease(self.client, r) for r in self.client._request(self.releases_url)['releases']]
+        return [CollectionRelease(client=self.client, **r['basic_information']) for r in self.client._request(self.releases_url)['releases']]
 
     def __len__(self):
         return self.count
@@ -54,51 +55,38 @@ class Format:
     text: str = field(default='')
     descriptions: list = field(default_factory=list)
 
-class ObjectField:
-    def __init__(self, dict_):
-        self.__dict__.update(dict_)
+@dataclass
+class Label:
+    name: str
+    catno: str
+    entity_type: str
+    entity_type_name: str
+    id: int
+    resource_url: str
 
-    def __str__(self):
-        return ', '.join("{0} = {1}".format(str(f), str(self.__dict__.get(f, "Unknown"))) for f in self.__dict__)
-
-class ListField:
-    def __init__(self, field_name, list_):
-        self.field_name = field_name
-        self.data = [ObjectField(i) for i in list_]
-    
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        if 0 > index < len(self.data):
-            raise IndexError
-        return self.data[index]
-
-    def __str__(self):
-        return "{} [{}]".format(self.field_name, ', '.join(str(artist) for artist in self.data))
-
+@dataclass
 class CollectionRelease:
-    def __init__(self, client, dict_):
-        basicinfo = dict_['basic_information']
-        self.artists = ListField('Artists', basicinfo['artists'])
-        self.formats = [Format(**f) for f in basicinfo['formats']]
-        self.title = basicinfo['title']
-        self.year = basicinfo['year']
-        self.resource_url = basicinfo['resource_url']
-        self.genres = basicinfo['genres']
-        self.styles = basicinfo['styles']
-        self.id = dict_['id']
-        self.client = client
-    
-    def __str__(self):
-        return "Release: {0} {1} -- {2}".format(self.title, self.year, ', '.join(self.artists))
-    
-    def __repr__(self):
-        return "Release: " + str(vars(self))
+    id: int
+    master_id: int
+    master_url: str
+    client: Any
+    cover_image: str
+    artists: list
+    formats: list
+    labels: list
+    thumb: str
+    title: str
+    year: str
+    resource_url: str
+    genres: list
+    styles: list
+
+    def __post_init__(self):
+        self.artists = [SimpleArtist(**a) for a in self.artists]
+        self.formats = [Format(**f) for f in self.formats]
+        self.labels = [Label(**l) for l in self.labels]
 
 class Release:
     def __init__(self, client, dict_):
         self.client = client
         self.data = dict_
-    
-

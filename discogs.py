@@ -24,7 +24,7 @@ class Client:
         """ Lists the folders in `user`'s collection. """
         url = self._build_url(self._folders_url_template.format(user=user))
         body = self._request(url)
-        return [Folder(self, f) for f in body['folders']]
+        return [Folder(client=self, **f) for f in body['folders']]
 
     def _request(self, url, params=None):
         if self.token:
