@@ -23,22 +23,27 @@ class Client:
     def list_folders(self, user):
         """ Lists the folders in `user`'s collection. """
         url = self._build_url(self._folders_url_template.format(user=user))
-        body = self._request(url)
+        body = self._get(url)
         return [Folder(client=self, **f) for f in body['folders']]
 
-    def _request(self, url, params=None):
+    def _request(self, method, url, params={}, data={}):
         if self.token:
-            if not params: params = {}
             params['token'] = self.token
         
         self._debug(f'Requesting {url}')
-        response = requests.get(url, params)
+        response = requests.request(method, url, params, data)
         
         self._debug(f'Response: {response.status_code} {response.text}')
         if 200 <= response.status_code < 300:
             return json.loads(response.text)
         else:
             response.raise_for_status()
+    
+    def _get(self, url, params={}, data={}):
+        return self._request('GET', url, params, data)
+    
+    def _post(self, url, params={}, data={}):
+        return self._request('POST', url, params, data)
     
     def _build_url(self, path):
         return self._baseurl + (path if path.startswith("/") else "/" + path)
@@ -59,6 +64,9 @@ def main():
         releases_by_folder = {}
         for folder in folders:
             releases_by_folder.update({folder.name: folder.releases})
+        
+        print("Retrieved releases:")
+        print(releases_by_folder)
     else:
         print("Usage: {0} {1} {2}".format(sys.argv[0], '<username>', '<token>'))
 

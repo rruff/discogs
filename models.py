@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 class Artist:
@@ -35,14 +36,15 @@ class Folder:
     name: str
     count: int
     resource_url: str
-    client: object
+    client: Any = field(repr=False)
 
     def __post_init__(self):
         self.releases_url = "{}/releases".format(self.resource_url)
 
     @property
     def releases(self):
-        return [CollectionRelease(client=self.client, **r['basic_information']) for r in self.client._request(self.releases_url)['releases']]
+        resp = self.client._get(self.releases_url)
+        return [CollectionRelease(client=self.client, folder=self, **r) for r in resp['releases']]
 
     def __len__(self):
         return self.count
@@ -65,11 +67,15 @@ class Label:
     resource_url: str
 
 @dataclass
-class CollectionRelease:
+class Note:
+    field_id: int
+    value: str
+
+@dataclass
+class BasicInformation:
     id: int
     master_id: int
     master_url: str
-    client: Any
     cover_image: str
     artists: list
     formats: list
@@ -80,11 +86,33 @@ class CollectionRelease:
     resource_url: str
     genres: list
     styles: list
-
+    
     def __post_init__(self):
         self.artists = [SimpleArtist(**a) for a in self.artists]
         self.formats = [Format(**f) for f in self.formats]
         self.labels = [Label(**l) for l in self.labels]
+
+@dataclass
+class CollectionRelease:
+    id: int
+    basic_information: Any
+    date_added: str
+    folder: Folder
+    folder_id: str
+    instance_id: str
+    rating: int
+    client: Any = field(repr=False)
+    notes: list = field(default_factory=list)
+    date_format_str = "%Y-%m-%dT%H:%M:%S%z"
+
+    def __post_init__(self):
+        self.basic_information = BasicInformation(**self.basic_information)
+        self.notes = [Note(**n) for n in self.notes]
+        self.date_added = datetime.strptime(self.date_added, self.date_format_str)
+        self.instance_url = "{}/releases/{}/instances/{}".format(self.folder.resource_url, self.id, self.instance_id)
+
+    def set_rating(self, rating):
+        params = {"rating":rating}
 
 class Release:
     def __init__(self, client, dict_):
