@@ -2,6 +2,7 @@
 
 import json
 import requests
+import urllib.error
 import sys
 
 from models import Artist, Folder, Release
@@ -13,9 +14,10 @@ class Client:
     _folders_url_template = "/users/{user}/collection/folders"
     _releases_by_folder_url_template = "/users/{user}/collection/folders/{folder_id}/releases"
 
-    def __init__(self, token=None, debug=False):
+    def __init__(self, token=None, useragent=None, debug=False):
         self.token = token
         self._isdebug = debug
+        self.useragent = useragent if useragent else self._useragent
 
     def artist(self, id):
         return Artist(self, self._request(self._baseurl + "/artists/" + str(id)))
@@ -26,27 +28,36 @@ class Client:
         body = self._get(url)
         return [Folder(client=self, **f) for f in body['folders']]
 
-    def _request(self, method, url, params={}, data={}):
+    def _request(self, method, url, params={}, data=None):
         if self.token:
             params['token'] = self.token
+        params['User-Agent'] = self.useragent
         
         self._debug(f'Requesting {url}')
-        response = requests.request(method, url, params, data)
+
+        request = Request(method, url, params, data)
+        content, status_code = request.send()
         
-        self._debug(f'Response: {response.status_code} {response.text}')
-        if 200 <= response.status_code < 300:
-            return json.loads(response.text)
+        if status_code == 204:
+            return status_code
+        
+        body = json.loads(content)
+
+        if 200 <= status_code < 300:
+            return body
         else:
-            response.raise_for_status()
+            raise urllib.error.HTTPError(status_code, body['message'])
     
-    def _get(self, url, params={}, data={}):
+    def _get(self, url, params={}, data=None):
         return self._request('GET', url, params, data)
     
-    def _post(self, url, params={}, data={}):
+    def _post(self, url, params={}, data=None):
         return self._request('POST', url, params, data)
     
     def _build_url(self, path):
-        return self._baseurl + (path if path.startswith("/") else "/" + path)
+        if not path.startswith("/"):
+            path = "/" + path
+        return self._baseurl + path
     
     def _debug(self, message):
         if self._isdebug:
@@ -55,6 +66,23 @@ class Client:
     def __str__(self):
         return "Discogs API Client"
 
+class Request:
+    def __init__(self, method, url, params={}, data=None, isjson=True):
+        self.method = method
+        self.url = url
+        self.params = params
+        self.data = data
+        self.isjson = isjson
+        self.headers = {'Accept-Encoding': 'gzip'}
+
+    def send(self):
+        if self.data and self.isjson:
+            self.headers['Content-Type'] = 'application/json'
+            self.data = json.dumps(self.data)
+        
+        response = requests.request(self.method, self.url, params=self.params, data=self.data, headers=self.headers)
+        return response.content, response.status_code
+    
 def main():
     if len(sys.argv) == 3:
         username = sys.argv[1]

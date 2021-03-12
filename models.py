@@ -112,7 +112,7 @@ class CollectionRelease:
         self.instance_url = "{}/releases/{}/instances/{}".format(self.folder.resource_url, self.id, self.instance_id)
 
     def set_rating(self, rating):
-        params = {"rating":rating}
+        self.client._post(self.instance_url, data={'rating': rating})
 
 class Release:
     def __init__(self, client, dict_):

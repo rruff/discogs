@@ -1,6 +1,6 @@
 # discogs
 
-A simple Python client for the [Discogs API](https://www.discogs.com/developers#page:home).
+A simple Python client for the [Discogs API](https://www.discogs.com/developers#page:home). Requires Python version 3.7 or higher.
 
 The intention is to allow me to work with my collection data in ways not exposed in the web site or the Discogs mobile app, e.g. filter by genres and media formats, etc.
 
